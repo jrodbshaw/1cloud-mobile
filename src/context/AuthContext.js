@@ -20,7 +20,7 @@ const authReducer = (state, action) => {
 };
 
 const useAuth = dispatch => async () => {
-  firebase.auth().onAuthStateChanged(user => {
+  firebase.auth().onAuthStateChanged(async (user) => {
     if (user) {
       dispatch({ type: "signin", payload: user });
       navigate("mainFlow");
@@ -32,21 +32,32 @@ const useAuth = dispatch => async () => {
 
 const signup = dispatch => async (email, password) => {
   try {
-    const response = await firebase.auth().createUserWithEmailAndPassword(email, password);
-    db.collection('users').doc(user.uid).set(user, { merge: true })
-    dispatch({ type: 'signup', payload: response.user })
-    navigate("mainFlow");
-    console.log(response.user)
+    const { user } = await firebase.auth().createUserWithEmailAndPassword(email, password)
+    await firebase.auth().onAuthStateChanged(firebaseUser => {
+      if (firebaseUser) {
+        // * add the stuff from the user that you want to store in firestore
+        const user = {
+          displayName: firebaseUser.displayName,
+          photoUrl: firebaseUser.photoURL,
+          uid: firebaseUser.uid
+        };
+        dispatch({ type: "signin", payload: user })
+        db.collection("users")
+          .doc(user.uid)
+          .set(user, { merge: true });
+      } else {
+        dispatch({ type: "signin", payload: null })
+      }
+    })
   } catch (error) {
     dispatch({ type: 'add_error', payload: { error: true } })
   }
 };
 
-const signin = dispatch => async ({ email, password }) => {
+const signin = dispatch => async (email, password) => {
   try {
-    const response = await firebase.auth().signInWithEmailAndPassword(email, password);
-    dispatch({ type: 'signin', payload: response.user })
-    navigate("mainFlow");
+    await firebase.auth().signInWithEmailAndPassword(email, password);
+    dispatch({ type: "signin", payload: user })
   } catch (error) {
     dispatch({ type: 'add_error', payload: { error: true } })
   }

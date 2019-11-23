@@ -25,7 +25,7 @@ const SigninScreen = ({ navigation }) => {
         onChangeText={setPassword}
       />
       <Button mode="contained"
-        onPress={() => signin({ email, password })}>
+        onPress={() => signin(email, password)}>
         Sign In
   </Button>
       <TouchableOpacity onPress={() => navigation.navigate("Signup")}>
